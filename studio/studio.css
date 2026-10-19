@@ -1,0 +1,28 @@
+/* AI Studio (/studio/ only). Builds on style.css: same paper, ink, type and form controls. */
+.status-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 18px; max-width: 900px; }
+.status-list li { display: flex; gap: 16px; align-items: baseline; line-height: 1.5; }
+.tag { flex: none; min-width: 78px; padding: 3px 10px; border: 1px solid var(--line); border-radius: 999px; font: 11px/1.6 var(--sans); letter-spacing: .12em; text-transform: uppercase; text-align: center; color: var(--muted); }
+.tag-on { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+
+.gallery { display: grid; gap: 48px; }
+.clip { margin: 0; display: grid; gap: 28px; }
+@media (min-width: 900px) { .clip { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); align-items: start; } }
+.clip video { display: block; width: 100%; height: auto; background: var(--ink); }
+.clip figcaption { display: grid; gap: 22px; }
+.clip-prompt { margin: 0; font: italic clamp(20px, 2vw, 26px)/1.35 var(--serif); }
+.clip-meta { margin: 0; display: grid; gap: 10px; border-top: 1px solid var(--line); padding-top: 18px; }
+.clip-meta div { display: grid; grid-template-columns: 96px 1fr; gap: 12px; font: 14px/1.5 var(--sans); }
+.clip-meta dt { color: var(--muted); text-transform: uppercase; letter-spacing: .1em; font-size: 11px; padding-top: 3px; }
+.clip-meta dd { margin: 0; }
+
+.create { display: grid; gap: 48px; }
+@media (min-width: 900px) { .create { grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); align-items: start; } }
+.create aside p:not(.eyebrow) { line-height: 1.6; }
+.how { margin: 24px 0 0; padding-left: 20px; display: grid; gap: 10px; line-height: 1.5; }
+.create code { font-size: .9em; }
+#studio-form { display: grid; gap: 18px; }
+#studio-form select { width: 100%; font: inherit; padding: 14px 12px; border: 1px solid var(--line); border-radius: 0; background: transparent; color: inherit; }
+#studio-form select:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.advanced summary { cursor: pointer; font: 12px/1.6 var(--sans); letter-spacing: .12em; text-transform: uppercase; }
+.advanced[open] { display: grid; gap: 18px; }
+#studio-result:empty { display: none; }
