@@ -1,0 +1,6 @@
+# Repo tooling that should never be served as part of the site.
+README.md
+.env.example
+scripts/
+tests/
+studio-agent/

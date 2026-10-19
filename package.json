@@ -1,0 +1,10 @@
+{
+  "name": "blackdisk",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node scripts/check.mjs",
+    "verify:live": "node scripts/verify-live.mjs",
+    "preview": "node scripts/preview.mjs"
+  }
+}
