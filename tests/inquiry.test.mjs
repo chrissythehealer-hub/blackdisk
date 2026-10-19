@@ -1,9 +1,9 @@
 // Exercises api/inquiry.js against the contract site.js relies on. No network: fetch is stubbed.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import handler from '../api/inquiry.js';
+import handler from '../api/inquiry.mjs';
 
-const call = async (method, body, env = { RESEND_API_KEY: 'test' }) => {
+const call = async (method, body, env = { RESEND_API_KEY: 'test', INQUIRY_FROM_EMAIL: 'Site <inquiries@blackdisk.co>' }) => {
   Object.assign(process.env, env);
   const out = { status: 0, headers: {}, body: null };
   const res = {
@@ -14,7 +14,7 @@ const call = async (method, body, env = { RESEND_API_KEY: 'test' }) => {
   await handler({ method, body, headers: { 'x-forwarded-for': `10.0.0.${Math.random() * 250 | 0}` } }, res);
   return out;
 };
-const valid = { name: 'Ada', email: 'ada@example.com', business: 'X', services: ['Web'], project: 'A new website please', website: '', startedAt: Date.now() - 60000, submissionId: 'abc' };
+const valid = { name: 'Ada', email: 'ada@example.com', business: 'X', services: ['Web'], project: 'A new website please', website: '', startedAt: Date.now() - 60000, submissionId: '0123456789abcdef-0001' };
 
 test('GET is 405 with Allow: POST', async () => {
   const r = await call('GET');
@@ -43,7 +43,7 @@ test('valid inquiry is sent with an idempotency key', async () => {
   const r = await call('POST', valid);
   assert.deepEqual(r.body, { ok: true });
   assert.equal(req.url, 'https://api.resend.com/emails');
-  assert.equal(req.init.headers['Idempotency-Key'], 'inquiry-abc');
+  assert.equal(req.init.headers['Idempotency-Key'], 'inquiry-0123456789abcdef-0001');
   assert.equal(JSON.parse(req.init.body).reply_to, 'ada@example.com');
 });
 

@@ -21,13 +21,13 @@ async function walk(dir, out = []) {
 }
 const exists = p => stat(p).then(() => true, () => false);
 const files = (await walk(ROOT)).map(f => relative(ROOT, f));
-const pages = files.filter(f => f.endsWith('index.html'));
+const pages = files.filter(f => f.startsWith('dist/') && f.endsWith('index.html'));
 
 // Public paths a page may link to: the pages themselves plus the serverless function.
 const resolveLocal = async href => {
   const path = decodeURI(href.split(/[?#]/)[0]);
-  if (path === '/api/inquiry' || path === '/api/inquiry/') return exists(join(ROOT, 'api/inquiry.js'));
-  return exists(join(ROOT, path.endsWith('/') ? path + 'index.html' : path));
+  if (path === '/api/inquiry' || path === '/api/inquiry/') return exists(join(ROOT, 'api/inquiry.mjs'));
+  return exists(join(ROOT, 'dist', path.endsWith('/') ? path + 'index.html' : path));
 };
 
 let navRef;

@@ -18,10 +18,10 @@ const unCloudflare = html => html
   .replace(/<a href="\/cdn-cgi\/l\/email-protection#([0-9a-f]+)"><span class="__cf_email__" data-cfemail="([0-9a-f]+)">\[email&#160;protected\]<\/span><\/a>/g,
     (_, h, t) => `<a href="mailto:${decode(h)}">${decode(t)}</a>`)
   .replace(/<a href="\/cdn-cgi\/l\/email-protection" class="__cf_email__" data-cfemail="([0-9a-f]+)">\[email&#160;protected\]<\/a>/g,
-    (_, h) => `<a href="mailto:${decode(h)}">${decode(h)}</a>`)
+    (_, h) => decode(h))
   .replace('<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>', '');
 
-const local = p => new URL('..' + (p.endsWith('/') ? p + 'index.html' : p), import.meta.url);
+const local = p => new URL('../dist' + (p.endsWith('/') ? p + 'index.html' : p), import.meta.url);
 let failed = 0;
 for (const p of [...PAGES, ...ASSETS]) {
   const res = await fetch(BASE + p);
