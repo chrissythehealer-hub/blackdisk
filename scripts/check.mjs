@@ -74,5 +74,6 @@ if (problems.length) {
 }
 console.log(`✓ ${pages.length} pages, ${files.length} files checked`);
 try {
+  execFileSync(process.execPath, [join(ROOT, 'scripts/build-studio.mjs'), '--check'], { stdio: 'inherit' });
   execFileSync(process.execPath, ['--test', ...files.filter(f => f.endsWith('.test.mjs'))], { cwd: ROOT, stdio: 'inherit' });
 } catch { process.exit(1); }

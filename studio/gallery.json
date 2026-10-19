@@ -1,0 +1,21 @@
+{
+  "clips": [
+    {
+      "id": "red-sports-car",
+      "title": "Coastal road at sunset",
+      "date": "2026-10-19",
+      "video": "/studio/videos/red-sports-car.mp4",
+      "mode": "text-to-video",
+      "prompt": "A small red sports car driving along a coastal road at sunset, cinematic lighting, natural wheel movement, smooth camera tracking, realistic motion.",
+      "width": 832,
+      "height": 480,
+      "frames": 49,
+      "fps": 24,
+      "steps": 20,
+      "cfg": 5,
+      "seed": 42,
+      "gpu": "Tesla T4",
+      "seconds": 204
+    }
+  ]
+}

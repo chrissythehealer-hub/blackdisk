@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "check": "node scripts/check.mjs",
+    "build:studio": "node scripts/build-studio.mjs",
     "verify:live": "node scripts/verify-live.mjs",
     "preview": "node scripts/preview.mjs"
   }
