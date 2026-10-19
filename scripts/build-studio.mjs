@@ -18,15 +18,19 @@ for (const [i, c] of clips.entries()) {
   for (const k of REQUIRED) if (c[k] === undefined || c[k] === '') problems.push(`clip ${i}: missing ${k}`);
   if (!/^\/studio\/videos\/[a-z0-9-]+\.(mp4|webm)$/.test(c.video)) problems.push(`clip ${c.id}: video must live in /studio/videos/`);
   // Only real files are shown as playable. A clip whose file hasn't been added yet is
-  // listed honestly as "video file not yet published" instead of a broken player.
+  // labelled as an example that isn't available, never shown as a working player.
   const ready = await exists(c.video);
+  const poster = c.video.replace(/\.(mp4|webm)$/, '.jpg');
+  const hasPoster = ready && await exists(poster);
   const secs = (c.frames / c.fps).toFixed(1);
   const media = ready
-    ? `<video controls muted loop playsinline preload="metadata" width="${c.width}" height="${c.height}" src="${esc(c.video)}" aria-label="${esc(c.title)}: generated video"></video>`
-    : `<div class="clip-pending" style="aspect-ratio:${c.width}/${c.height}"><span class="dot" aria-hidden="true"></span><span>Video file not yet published</span></div>`;
-  cards.push(`<article class="clip" id="clip-${esc(c.id)}"><div class="clip-media">${media}</div><div class="clip-body"><p class="eyebrow">${esc(c.mode)} · ${esc(c.date)}</p><h3>${esc(c.title)}</h3><p class="clip-prompt">“${esc(c.prompt)}”</p><dl class="clip-specs"><div><dt>Model</dt><dd>Wan 2.2 TI2V 5B</dd></div><div><dt>Size</dt><dd>${c.width}×${c.height}</dd></div><div><dt>Length</dt><dd>${c.frames} frames · ${c.fps} fps · ${secs} s</dd></div><div><dt>Steps / CFG</dt><dd>${c.steps} / ${c.cfg}</dd></div><div><dt>Seed</dt><dd>${esc(c.seed)}</dd></div><div><dt>Rendered on</dt><dd>Kaggle ${esc(c.gpu)} · ${c.seconds} s</dd></div></dl></div></article>`);
+    ? `<video controls muted loop playsinline preload="none" width="${c.width}" height="${c.height}" src="${esc(c.video)}"${hasPoster ? ` poster="${esc(poster)}"` : ''} aria-label="${esc(c.title)}: generated video"></video>`
+    : `<div class="clip-pending" style="aspect-ratio:${c.width}/${c.height}"><span class="dot" aria-hidden="true"></span><span>Example project — video not available</span></div>`;
+  const badge = ready ? '<span class="clip-badge">Real output</span>' : '<span class="clip-badge clip-badge-off">Example · no video</span>';
+  const download = ready ? `<a class="text-link clip-download" href="${esc(c.video)}" download>Download MP4</a>` : '';
+  cards.push(`<article class="clip" id="clip-${esc(c.id)}"><div class="clip-media">${media}</div><div class="clip-body">${badge}<p class="eyebrow">${esc(c.mode)} · ${esc(c.date)}</p><h3>${esc(c.title)}</h3><p class="clip-prompt">“${esc(c.prompt)}”</p><dl class="clip-specs"><div><dt>Model</dt><dd>Wan 2.2 TI2V 5B</dd></div><div><dt>Size</dt><dd>${c.width}×${c.height}</dd></div><div><dt>Length</dt><dd>${c.frames} frames · ${c.fps} fps · ${secs} s</dd></div><div><dt>Steps / CFG</dt><dd>${c.steps} / ${c.cfg}</dd></div><div><dt>Seed</dt><dd>${esc(c.seed)}</dd></div><div><dt>Rendered on</dt><dd>Kaggle ${esc(c.gpu)} · ${c.seconds} s</dd></div></dl>${download}</div></article>`);
 }
-const block = `<!-- gallery:start (generated from dist/studio/gallery.json by scripts/build-studio.mjs) -->${cards.join('') || '<p class="body-copy">The first clips are rendering.</p>'}<!-- gallery:end -->`;
+const block = `<!-- gallery:start (generated from dist/studio/gallery.json by scripts/build-studio.mjs) -->${cards.join('') || '<p class="body-copy">No published clips yet. Real renders appear here with their exact settings.</p>'}<!-- gallery:end -->`;
 
 const pagePath = root('dist/studio/index.html');
 const page = await readFile(pagePath, 'utf8');

@@ -47,8 +47,15 @@ Names are from the original function's header comment. The recipient is fixed in
 ## AI Studio (`/studio/`)
 
 A public gallery of real clips rendered with **Wan 2.2 TI2V-5B** (Apache-2.0) in ComfyUI on
-Kaggle's free T4, plus a Create panel that prepares a Kaggle notebook in the browser.
+Kaggle's free T4, a guided **Configure → Prepare → Generate → Import** wizard, and **My Projects**.
 No login, no server calls, no GPU of our own: **$0**.
+
+- `dist/studio/notebook.js` — settings model: only options Wan 2.2 TI2V-5B really supports; unsupported
+  combinations are corrected with an explanation; fills the notebook's step-5 cell (image embedded as base64).
+- `dist/studio/studio.js` — the wizard. It never shows Kaggle progress it can't see: statuses are only what the
+  visitor did (notebook prepared, started on Kaggle, reported failed, video imported).
+- `dist/studio/library.js` — My Projects in the visitor's browser (IndexedDB). Nothing is uploaded; another
+  device, private browsing or clearing site data means an empty library. Imports are limited to 500 MB MP4s.
 
 ### Publish a clip
 
@@ -57,14 +64,14 @@ No login, no server calls, no GPU of our own: **$0**.
 2. Put the MP4 in `dist/studio/videos/<id>.mp4` (keep it small; draft clips are ~1–3 MB).
 3. Add the entry to `dist/studio/gallery.json`, then `npm run build:studio` and `npm run check`.
 
-A clip whose MP4 isn't in `dist/studio/videos/` yet is shown as "Video file not yet published"
-rather than a broken player.
+A clip whose MP4 isn't in `dist/studio/videos/` yet is shown as "Example project — video not available"
+rather than a broken player. A `<id>.jpg` next to the MP4 is used as its poster.
 
 ### Changing the notebook
 
 Edit `studio-agent/comfy.py`, `workflows.py` or `kaggle/build_notebook.py`, then
 `python3 studio-agent/kaggle/build_notebook.py && npm run build:studio`. The Create panel
-rewrites the `MODE`/`IMAGE_URL`/`PROMPT`/`SIZE`/`FRAMES`/`STEPS`/`SEED` lines of step 5, and
+rewrites the `MODE`/`IMAGE_URL`/`IMAGE_DATA`/`PROMPT`/`SIZE`/`FRAMES`/`STEPS`/`CFG`/`NEGATIVE`/`SEED` lines of step 5, and
 `npm run check` fails if that cell or the published copy goes missing or stale.
 
 ### Live generation — OFF

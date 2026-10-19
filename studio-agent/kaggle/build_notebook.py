@@ -33,16 +33,21 @@ cells = [
 # BLVCKDISK AI Studio — one real video (Kaggle, free GPU)
 
 Generates **one** short clip (text-to-video or image-to-video) with **Wan 2.2 TI2V 5B** (Apache-2.0) in ComfyUI, on Kaggle's free GPU.
-Settings prepared on blackdisk.co/studio are already filled in at step 5.
+Settings prepared on blackdisk.co/studio are already filled in at step 5 — **you don't need to edit anything.**
+If you chose image-to-video there, your image is already inside this notebook too.
 
-**Before running:** right sidebar → *Session options* → **Accelerator: GPU T4 x2** and **Internet: On**.
-For image mode, upload your image (step 5). Then use **Run All**. The first run downloads ~17 GB of model files.
-Nothing here costs money. When finished, click **Stop session** (power icon) to save your weekly GPU hours.
+1. Right sidebar → *Session options* → **Accelerator: GPU T4 x2** and **Internet: On**.
+2. **Save Version → Save & Run All (Commit)**. It runs on Kaggle's servers; you can close this tab.
+3. When the version shows ✓, open its **Output** and download **`first_video.mp4`**.
+
+The first run downloads ~17 GB of model files. Nothing here costs money.
 """),
     md("## 1 · Check the machine"),
     code("""
 import shutil, subprocess, os
-print(subprocess.run(["nvidia-smi", "--query-gpu=name,memory.total", "--format=csv"], capture_output=True, text=True).stdout or "NO GPU — set Accelerator to GPU T4 x2 in Session options, then restart.")
+gpu_info = subprocess.run(["nvidia-smi", "--query-gpu=name,memory.total", "--format=csv"], capture_output=True, text=True).stdout if shutil.which("nvidia-smi") else ""
+print(gpu_info)
+assert gpu_info, "❌ NO GPU. Session options → Accelerator → GPU T4 x2, then Save & Run All again."
 print(f"RAM: {os.sysconf('SC_PAGE_SIZE') * os.sysconf('SC_PHYS_PAGES') / 1024**3:.1f} GB")
 WORK = "/kaggle/temp" if os.path.isdir("/kaggle/temp") else "/tmp"
 os.makedirs(WORK, exist_ok=True)
@@ -99,11 +104,10 @@ dev = comfy.system_stats()["devices"][0]
 print("ComfyUI running on", dev["name"], f"({dev['vram_total']/1024**3:.1f} GB VRAM)")
 """),
     md("""
-## 5 · Your reference image and prompt
+## 5 · Your settings (filled in by blackdisk.co/studio — no edits needed)
 
-Set `MODE = "text"` to generate from the prompt alone (no upload needed), or keep `"image"` and upload a photo:
-right sidebar → **Input** → **Upload** → *New Dataset* → add your photo (PNG/JPEG/WebP) → **Create**.
-It appears under `/kaggle/input/…`. The first image found there is used. Or set `IMAGE_URL` to a public image link.
+Image-to-video uses, in order: the image embedded by the studio (`IMAGE_DATA`), an `IMAGE_URL`,
+or the first image you uploaded under **Input** (`/kaggle/input/…`).
 
 Start small to prove it works: **draft size, 49 frames (≈2 s)**. Bigger settings take much longer on a T4.
 """),
@@ -111,20 +115,29 @@ Start small to prove it works: **draft size, 49 frames (≈2 s)**. Bigger settin
 import glob
 MODE = "text"           # "text" = video from the prompt alone · "image" = animate your uploaded image
 IMAGE_URL = ""          # optional: direct link to a public image instead of uploading
+IMAGE_DATA = ""         # image embedded by blackdisk.co/studio (base64); empty = none
 PROMPT = "A small red sports car driving along a coastal road at sunset, cinematic lighting, natural wheel movement, smooth camera tracking, realistic motion."
 SIZE = "auto"           # auto picks 9x16-draft or 16x9-draft from the image shape; or e.g. "9x16", "16x9", "1x1"
 FRAMES = 49             # 25, 49, 81 or 121 (24 fps)
 STEPS = 20
+CFG = 5.0               # how closely to follow the prompt (1–10)
+NEGATIVE = ""           # what to avoid; empty = the model's recommended list
 SEED = 42
 
 if MODE == "text":
     IMAGE = None
+elif IMAGE_DATA:
+    import base64
+    raw = base64.b64decode(IMAGE_DATA)
+    ext = ".png" if raw[:8] == b"\\x89PNG\\r\\n\\x1a\\n" else ".webp" if raw[8:12] == b"WEBP" else ".jpg"
+    IMAGE = f"{WORK}/reference{ext}"
+    open(IMAGE, "wb").write(raw)
 elif IMAGE_URL:
     IMAGE = f"{WORK}/reference" + os.path.splitext(IMAGE_URL.split("?")[0])[1].lower()
     urllib.request.urlretrieve(IMAGE_URL, IMAGE)
 else:
     found = sorted(p for ext in ("png", "jpg", "jpeg", "webp", "PNG", "JPG", "JPEG", "WEBP") for p in glob.glob(f"/kaggle/input/**/*.{ext}", recursive=True))
-    assert found, "No image found. Upload one (see above) or set IMAGE_URL."
+    assert found, "❌ No image found. Prepare the notebook again on blackdisk.co/studio with your image, or upload one under Input."
     IMAGE = found[0]
 from PIL import Image
 w, h = Image.open(IMAGE).size if IMAGE else (16, 9)
@@ -137,7 +150,7 @@ Image.open(IMAGE).resize((w * 240 // max(w, h), h * 240 // max(w, h))) if IMAGE 
     code("""
 from workflows import build_graph, validate_params, STAGE_BY_NODE
 WORKFLOW = "wan22-t2v" if MODE == "text" else "wan22-i2v"
-params = validate_params(WORKFLOW, {"prompt": PROMPT, "size": SIZE, "frames": FRAMES, "steps": STEPS, "seed": SEED})
+params = validate_params(WORKFLOW, {"prompt": PROMPT, "size": SIZE, "frames": FRAMES, "steps": STEPS, "cfg": CFG, "seed": SEED, "negative": NEGATIVE or None})
 image_name = None
 if IMAGE:
     mime = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp"}[os.path.splitext(IMAGE)[1].lower()]
@@ -159,12 +172,15 @@ while True:
 status = hist.get("status", {})
 if status.get("status_str") == "error":
     msgs = [m[1].get("exception_message") for m in status.get("messages", []) if m[0] == "execution_error"]
-    raise RuntimeError(f"Generation failed: {msgs} — last log lines:\\n" + open(f"{WORK}/comfyui.log").read()[-2000:])
+    hint = ("The GPU ran out of memory: prepare again with a Draft size or a shorter length."
+            if any("out of memory" in str(m).lower() for m in msgs) else "Try Save & Run All once more; if it fails again, prepare with a Draft size.")
+    raise RuntimeError(f"❌ GENERATION FAILED. {hint}\\nDetails: {msgs}\\nLast log lines:\\n" + open(f"{WORK}/comfyui.log").read()[-2000:])
 out = next(i for node in hist["outputs"].values() for items in node.values() if isinstance(items, list) for i in items if isinstance(i, dict) and str(i.get("filename", "")).endswith(".mp4"))
 RESULT = "/kaggle/working/first_video.mp4"
 comfy.download_output(out["filename"], out.get("subfolder", ""), out.get("type", "output"), RESULT)
 ELAPSED = int(time.time() - t0)
-print(f"Done in {ELAPSED}s →", RESULT, f"({os.path.getsize(RESULT)/1e6:.1f} MB)")
+print(f"✅ YOUR VIDEO IS READY — generated in {ELAPSED}s ({os.path.getsize(RESULT)/1e6:.1f} MB).")
+print("Download it: this version's Output → first_video.mp4. Then import it on blackdisk.co/studio.")
 """),
     md("## 7 · Check, watch and download"),
     code("""
